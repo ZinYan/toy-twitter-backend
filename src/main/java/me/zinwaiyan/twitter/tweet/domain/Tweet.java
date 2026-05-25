@@ -57,4 +57,16 @@ public class Tweet {
     public void preUpdate() {
         this.updatedAt = LocalDateTime.now();
     }
+
+    public static Tweet create(User writer, String content, String imageUrl) {
+        Tweet tweet = new Tweet();
+        tweet.writer = writer;
+        tweet.content = content;
+        tweet.imageUrl = imageUrl;
+        tweet.commentCount = 0;
+        tweet.repostCount = 0;
+        tweet.likeCount = 0;
+        tweet.viewCount = 0;
+        return tweet;
+    }
 }
