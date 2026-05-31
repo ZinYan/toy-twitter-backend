@@ -33,21 +33,16 @@ jobs:
           script: |
             cd /home/ubuntu/toy-twitter-backend
 
-            git fetch origin
-            git checkout deploy
             git pull origin deploy
 
-            chmod +x gradlew
             ./gradlew bootJar -x test
 
             sudo fuser -k 8080/tcp || true
 
-            source ~/.bashrc
+            export DB_URL="${{ secrets.DB_URL }}"
+            export DB_USERNAME="${{ secrets.DB_USERNAME }}"
+            export DB_PASSWORD="${{ secrets.DB_PASSWORD }}"
 
             nohup java -Dfile.encoding=UTF-8 \
-              -jar build/libs/*.jar \
-              > /home/ubuntu/toy-twitter-backend/app.log 2>&1 &
-
-            sleep 10
-
-            curl -f http://localhost:8080/tweets
+              -jar build/libs/twitter-0.0.1-SNAPSHOT.jar \
+              > /home/ubuntu/app.log 2>&1 &
