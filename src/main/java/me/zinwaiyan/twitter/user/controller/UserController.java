@@ -1,19 +1,21 @@
 package me.zinwaiyan.twitter.user.controller;
 
 import lombok.RequiredArgsConstructor;
-import me.zinwaiyan.twitter.user.dto.UserProfileResponseDto;
+import me.zinwaiyan.twitter.user.dto.response.UserProfileResponse;
 import me.zinwaiyan.twitter.user.service.UserService;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/users")
+@RequiredArgsConstructor
 public class UserController {
 
     private final UserService userService;
 
+    // 프로필 조회
     @GetMapping("/{userId}/profile")
-    public UserProfileResponseDto getProfile(@PathVariable Long userId) {
-        return userService.getProfile(userId);
+    public ResponseEntity<UserProfileResponse> getUserProfile(@PathVariable("userId") Long userId) {
+        return ResponseEntity.ok(userService.getUserProfile(userId));
     }
 }

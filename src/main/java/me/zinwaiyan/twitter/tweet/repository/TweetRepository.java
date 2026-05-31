@@ -10,7 +10,7 @@ public interface TweetRepository extends JpaRepository<Tweet, Long> {
 
     List<Tweet> findAllByOrderByCreatedAtDesc();
 
-    List<Tweet> findByWriterOrderByCreatedAtDesc(User writer);
+    List<Tweet> findAllByUserOrderByCreatedAtDesc(User user);
 
-    long countByWriter(User writer);
+    Long countByUser(User user);
 }

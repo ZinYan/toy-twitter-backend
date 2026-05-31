@@ -2,71 +2,54 @@ package me.zinwaiyan.twitter.tweet.domain;
 
 import jakarta.persistence.*;
 import lombok.AccessLevel;
+import lombok.Builder;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
+import me.zinwaiyan.twitter.global.domain.BaseEntity;
 import me.zinwaiyan.twitter.user.domain.User;
 
 import java.time.LocalDateTime;
 
-@Getter
 @Entity
-@Table(name = "tweet")
+@Getter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
-public class Tweet {
+public class Tweet extends BaseEntity {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "tweet_id")
     private Long tweetId;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
-    private User writer;
+    private User user;
 
     @Column(nullable = false, length = 280)
     private String content;
 
-    @Column(name = "image_url", length = 500)
     private String imageUrl;
 
-    @Column(name = "comment_count", nullable = false)
-    private Integer commentCount = 0;
+    @Column(nullable = false)
+    private Long commentCount;
 
-    @Column(name = "repost_count", nullable = false)
-    private Integer repostCount = 0;
+    @Column(nullable = false)
+    private Long repostCount;
 
-    @Column(name = "like_count", nullable = false)
-    private Integer likeCount = 0;
+    @Column(nullable = false)
+    private Long likeCount;
 
-    @Column(name = "view_count", nullable = false)
-    private Integer viewCount = 0;
+    @Column(nullable = false)
+    private Long viewCount;
 
-    @Column(name = "created_at", nullable = false)
-    private LocalDateTime createdAt;
-
-    @Column(name = "updated_at", nullable = false)
-    private LocalDateTime updatedAt;
-
-    @PrePersist
-    public void prePersist() {
-        this.createdAt = LocalDateTime.now();
-        this.updatedAt = LocalDateTime.now();
+    @Builder
+    public Tweet(User user, String content, String imageUrl) {
+        this.user = user;
+        this.content = content;
+        this.imageUrl = imageUrl;
+        this.commentCount = 0L;
+        this.repostCount = 0L;
+        this.likeCount = 0L;
+        this.viewCount = 0L;
     }
-
-    @PreUpdate
-    public void preUpdate() {
-        this.updatedAt = LocalDateTime.now();
-    }
-
-    public static Tweet create(User writer, String content, String imageUrl) {
-        Tweet tweet = new Tweet();
-        tweet.writer = writer;
-        tweet.content = content;
-        tweet.imageUrl = imageUrl;
-        tweet.commentCount = 0;
-        tweet.repostCount = 0;
-        tweet.likeCount = 0;
-        tweet.viewCount = 0;
-        return tweet;
+    public void increaseViewCount() {
+        this.viewCount += 1;
     }
 }

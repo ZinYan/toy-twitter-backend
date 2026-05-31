@@ -1,11 +1,14 @@
 package me.zinwaiyan.twitter.tweet.service;
 
 import lombok.RequiredArgsConstructor;
+import me.zinwaiyan.twitter.global.exception.CustomException;
+import me.zinwaiyan.twitter.global.exception.ErrorCode;
 import me.zinwaiyan.twitter.tweet.domain.Tweet;
-import me.zinwaiyan.twitter.tweet.dto.TweetResponseDto;
+import me.zinwaiyan.twitter.tweet.dto.request.TweetCreateRequest;
+import me.zinwaiyan.twitter.tweet.dto.response.TweetResponse;
 import me.zinwaiyan.twitter.tweet.repository.TweetRepository;
 import me.zinwaiyan.twitter.user.domain.User;
-import me.zinwaiyan.twitter.user.repository.UserRepository;
+import me.zinwaiyan.twitter.user.service.UserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
@@ -14,48 +17,56 @@ import java.util.List;
 
 @Service
 @RequiredArgsConstructor
-@Transactional(readOnly = true)
 public class TweetService {
 
     private final TweetRepository tweetRepository;
-    private final UserRepository userRepository;
+    private final UserService userService;
 
-    public List<TweetResponseDto> getAllTweets() {
-        return tweetRepository.findAllByOrderByCreatedAtDesc()
-                .stream()
-                .map(TweetResponseDto::from)
-                .toList();
-    }
+    @Transactional
+    public TweetResponse createTweet(TweetCreateRequest request, MultipartFile image) {
+        User user = userService.findByUserId(request.getUserId());
 
-    public TweetResponseDto getTweet(Long tweetId) {
-        Tweet tweet = tweetRepository.findById(tweetId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 트윗입니다."));
+        String imageUrl = getImageUrl(image);
 
-        return TweetResponseDto.from(tweet);
+        Tweet tweet = request.toEntity(user, imageUrl);
+        tweetRepository.save(tweet);
+
+        return new TweetResponse(tweet);
     }
 
     @Transactional
-    public TweetResponseDto createTweet(Long userId, String content, MultipartFile image) {
-        User writer = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 사용자입니다."));
+    public TweetResponse getTweet(Long tweetId) {
+        Tweet tweet = findByTweetId(tweetId);
 
-        String imageUrl = null;
+        tweet.increaseViewCount();
 
-        if (image != null && !image.isEmpty()) {
-            imageUrl = "/images/" + image.getOriginalFilename();
-        }
+        return new TweetResponse(tweet);
+    }
 
-        Tweet tweet = Tweet.create(writer, content, imageUrl);
-        Tweet savedTweet = tweetRepository.save(tweet);
-
-        return TweetResponseDto.from(savedTweet);
+    @Transactional(readOnly = true)
+    public List<TweetResponse> getAllTweets() {
+        return tweetRepository.findAllByOrderByCreatedAtDesc()
+                .stream()
+                .map(TweetResponse::new)
+                .toList();
     }
 
     @Transactional
     public void deleteTweet(Long tweetId) {
-        Tweet tweet = tweetRepository.findById(tweetId)
-                .orElseThrow(() -> new IllegalArgumentException("존재하지 않는 트윗입니다."));
-
+        Tweet tweet = findByTweetId(tweetId);
         tweetRepository.delete(tweet);
+    }
+
+    public Tweet findByTweetId(Long tweetId) {
+        return tweetRepository.findById(tweetId)
+                .orElseThrow(() -> new CustomException(ErrorCode.TWEET_NOT_FOUND));
+    }
+
+    private String getImageUrl(MultipartFile image) {
+        if (image == null || image.isEmpty()) {
+            return null;
+        }
+
+        return "/images/" + image.getOriginalFilename();
     }
 }

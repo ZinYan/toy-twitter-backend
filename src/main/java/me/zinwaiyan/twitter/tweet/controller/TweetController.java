@@ -1,45 +1,52 @@
 package me.zinwaiyan.twitter.tweet.controller;
 
+import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import me.zinwaiyan.twitter.tweet.dto.TweetResponseDto;
+import me.zinwaiyan.twitter.tweet.dto.request.TweetCreateRequest;
+import me.zinwaiyan.twitter.tweet.dto.response.TweetResponse;
 import me.zinwaiyan.twitter.tweet.service.TweetService;
-import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.net.URI;
 import java.util.List;
-import java.util.Map;
 
 @RestController
-@RequiredArgsConstructor
 @RequestMapping("/tweets")
+@RequiredArgsConstructor
 public class TweetController {
 
     private final TweetService tweetService;
 
-    @GetMapping
-    public List<TweetResponseDto> getAllTweets() {
-        return tweetService.getAllTweets();
-    }
-
-    @GetMapping("/{tweetId}")
-    public TweetResponseDto getTweet(@PathVariable Long tweetId) {
-        return tweetService.getTweet(tweetId);
-    }
-
+    // 트윗 작성
     @PostMapping
-    @ResponseStatus(HttpStatus.CREATED)
-    public TweetResponseDto createTweet(
-            @RequestParam Long userId,
-            @RequestParam String content,
+    public ResponseEntity<TweetResponse> createTweet(
+            @Valid @ModelAttribute TweetCreateRequest request,
             @RequestPart(required = false) MultipartFile image
     ) {
-        return tweetService.createTweet(userId, content, image);
+        TweetResponse response = tweetService.createTweet(request, image);
+        return ResponseEntity
+                .created(URI.create("/tweets/" + response.getTweetId()))
+                .body(response);
     }
 
+    // 전체 트윗 조회
+    @GetMapping
+    public ResponseEntity<List<TweetResponse>> getAllTweets() {
+        return ResponseEntity.ok(tweetService.getAllTweets());
+    }
+
+    // 트윗 상세 조회
+    @GetMapping("/{tweetId}")
+    public ResponseEntity<TweetResponse> getTweet(@PathVariable("tweetId") Long tweetId) {
+        return ResponseEntity.ok(tweetService.getTweet(tweetId));
+    }
+
+    // 트윗 삭제
     @DeleteMapping("/{tweetId}")
-    public Map<String, String> deleteTweet(@PathVariable Long tweetId) {
+    public ResponseEntity<Void> deleteTweet(@PathVariable("tweetId") Long tweetId) {
         tweetService.deleteTweet(tweetId);
-        return Map.of("message", "트윗 삭제 성공");
+        return ResponseEntity.noContent().build();
     }
 }
